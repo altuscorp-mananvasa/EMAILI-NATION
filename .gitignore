@@ -1,0 +1,35 @@
+node_modules
+.next
+out
+dist
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+.vercel
+.turbo
+coverage
+supabase/.temp
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Editor / OS junk
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local tooling (extraction scripts I used during dev)
+fix-types.js
+fix-modules.js
+extract-only.js
+extract-tgz.ps1
+list-tar.js
+count-tar.js
+check-pkg.js
+check.ps1
+commit-and-push.sh
+finalize.sh
+verify.sh
