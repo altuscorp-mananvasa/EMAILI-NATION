@@ -4,6 +4,15 @@
  *
  * Vercel automatically attaches `Authorization: Bearer <CRON_SECRET>` to
  * cron invocations. We re-validate it here as a safety net.
+ *
+ * Vercel cron max-duration by plan:
+ *   Hobby:    10s   (we chunk to 100 contacts per tick to stay under)
+ *   Pro:      60s   (one campaign's full daily batch usually fits)
+ *   Enterprise: 300s
+ *
+ * We honour the CRON_BATCH_SIZE env var so you can tune per-environment.
+ * The default of 100 is safe for Vercel Hobby and still sends the full
+ * 900/day over the course of a few cron invocations.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +21,8 @@ import { getServiceSupabase } from "@/lib/supabase/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 min — the Vercel hobby ceiling
+// Hobby = 10s. If you're on Pro/Enterprise, bump to 60 or 300.
+export const maxDuration = 10;
 
 async function isAuthorized(req: NextRequest): Promise<boolean> {
   const expected = process.env.CRON_SECRET;
@@ -35,10 +45,16 @@ export async function GET(req: NextRequest) {
     .eq("status", "running")
     .order("created_at", { ascending: true });
 
+  // Per-tick batch size. Defaults to 40 because we run the cron hourly on
+  // Vercel Hobby (10s max-duration per tick). 40 × 24 ticks = 960/day,
+  // just above the 900 target. Set CRON_BATCH_SIZE in Vercel to override
+  // (e.g. 900 if you upgrade to Pro/Enterprise).
+  const batchSize = Number(process.env.CRON_BATCH_SIZE ?? 40);
+
   const results = [];
   for (const c of campaigns ?? []) {
     try {
-      const r = await runDailySend({ campaignId: c.id });
+      const r = await runDailySend({ campaignId: c.id, batchSizeOverride: batchSize });
       results.push(r);
     } catch (e) {
       results.push({ campaignId: c.id, error: e instanceof Error ? e.message : String(e) });
