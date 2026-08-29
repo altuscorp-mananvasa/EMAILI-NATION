@@ -149,6 +149,36 @@ Unknown tokens are left visible so authors can spot typos.
 
 ---
 
+## Deployment notes
+
+### Vercel plan limits
+
+This system is tuned for **Vercel Hobby** (free tier). Key constraints:
+
+| Limit | Hobby value | How we handle it |
+|---|---|---|
+| Function max duration | 10s | Cron route sets `maxDuration = 10` |
+| Cron invocations | 100/day | Hourly schedule = 24/day (24% of limit) |
+| Build time | 45 min | We slim deps to keep builds ~1 min |
+| Bandwidth | 100 GB/mo | Inline-styled HTML emails are tiny |
+| Concurrent builds | 1 | Each push builds serially |
+
+If you upgrade to **Pro** later:
+- Set `CRON_BATCH_SIZE=900` in env vars (one tick = full daily batch)
+- Bump `maxDuration` in `src/app/api/cron/daily-send/route.ts` to `60`
+- The variation engine, send log, and idempotency all work the same.
+
+### Why the cron runs every hour, not 9 AM IST
+
+Original design: 9 AM IST = `30 3 * * *` UTC. But Hobby's 10s limit means
+one tick can only send ~40 emails. To hit the 900/day target, we shifted
+to **hourly** and split across 24 ticks. Vercel auto-handles timezone,
+and the engine's `(campaign_id, contact_id, day_index)` unique key
+prevents the same contact from being emailed twice in the same day
+even if a tick fires extra times.
+
+---
+
 ## License
 
 Private — © Productivity Shastra / Unleashed.
