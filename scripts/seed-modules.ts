@@ -1,9 +1,6 @@
-// Run with:  npx tsx scripts/seed-modules.ts
+// Run with:  node --env-file=.env.local --import tsx scripts/seed-modules.ts
+//            (or)  npx tsx scripts/seed-modules.ts  (after `npm install dotenv` locally)
 // Upserts the seed modules into the `email_modules` table.
-
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
 
 import { createClient } from "@supabase/supabase-js";
 import { ALL_SEED_MODULES } from "../src/lib/seed-modules";
@@ -13,6 +10,7 @@ async function main() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    console.error("Run with:  node --env-file=.env.local --import tsx scripts/seed-modules.ts");
     process.exit(1);
   }
 
