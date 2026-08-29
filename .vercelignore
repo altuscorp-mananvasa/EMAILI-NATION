@@ -1,0 +1,15 @@
+# Don't ship the one-shot seeder or the dev tooling to Vercel.
+# This shaves a few MB off the upload and keeps the build surface clean.
+scripts/
+deploy.sh
+DEPLOY.md
+
+# Standard ignores (Vercel already does most of these, but be explicit).
+node_modules/
+.next/
+out/
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env*.local
