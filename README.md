@@ -168,14 +168,16 @@ If you upgrade to **Pro** later:
 - Bump `maxDuration` in `src/app/api/cron/daily-send/route.ts` to `60`
 - The variation engine, send log, and idempotency all work the same.
 
-### Why the cron runs every hour, not 9 AM IST
+### Why the cron runs once a day, not 9 AM IST
 
-Original design: 9 AM IST = `30 3 * * *` UTC. But Hobby's 10s limit means
-one tick can only send ~40 emails. To hit the 900/day target, we shifted
-to **hourly** and split across 24 ticks. Vercel auto-handles timezone,
-and the engine's `(campaign_id, contact_id, day_index)` unique key
-prevents the same contact from being emailed twice in the same day
-even if a tick fires extra times.
+The cron fires at **9:00 AM IST** (= `30 3 * * *` UTC). The actual
+*email composition* and *SMTP send* work happens in the background —
+the cron route enqueues contacts and returns fast, so the 10s Hobby
+limit is never hit. The first version of this project tried hourly
+cron, but **Vercel Hobby only allows one cron invocation per day**;
+the schedule `0 * * * *` was rejected at deploy time. Single daily
+fires, with the engine's per-day idempotency, are the right shape
+for Hobby.
 
 ---
 
